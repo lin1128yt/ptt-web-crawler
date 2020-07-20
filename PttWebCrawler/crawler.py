@@ -166,6 +166,10 @@ class PttWebCrawler(object):
         # count: 推噓文相抵後的數量; all: 推文總數
         message_count = {'all': p+b+n, 'count': p-b, 'push': p, 'boo': b, "neutral": n}
 
+        if p+b+n < 50:
+            print('skip')
+            return
+
         # print 'msgs', messages
         # print 'mscounts', message_count
 
