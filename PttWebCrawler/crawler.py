@@ -59,7 +59,7 @@ class PttWebCrawler(object):
     def parse_articles(self, start, end, board, path='.', timeout=3):
             filename = board + '-' + str(start) + '-' + str(end) + '.json'
             filename = os.path.join(path, filename)
-            self.store(filename, u'{"articles": [', 'w')
+            self.store(filename, u'[', 'w')
             for i in range(end-start+1):
                 index = start + i
                 print('Processing index:', str(index))
@@ -75,17 +75,22 @@ class PttWebCrawler(object):
                 for div in divs:
                     try:
                         # ex. link would be <a href="/bbs/PublicServan/M.1127742013.A.240.html">Re: [問題] 職等</a>
+
+
                         href = div.find('a')['href']
                         link = self.PTT_URL + href
                         article_id = re.sub('\.html', '', href.split('/')[-1])
                         if div == divs[-1] and i == end-start:  # last div of last page
+                            print('last one')
                             self.store(filename, self.parse(link, article_id, board), 'a')
                         else:
                             self.store(filename, self.parse(link, article_id, board) + ',\n', 'a')
+                        pass
+
                     except:
                         pass
                 time.sleep(0.1)
-            self.store(filename, u']}', 'a')
+            self.store(filename, u']', 'a')
             return filename
 
     def parse_article(self, article_id, board, path='.'):
@@ -150,12 +155,6 @@ class PttWebCrawler(object):
             if not push.find('span', 'push-tag'):
                 continue
             push_tag = push.find('span', 'push-tag').string.strip(' \t\n\r')
-            push_userid = push.find('span', 'push-userid').string.strip(' \t\n\r')
-            # if find is None: find().strings -> list -> ' '.join; else the current way
-            push_content = push.find('span', 'push-content').strings
-            push_content = ' '.join(push_content)[1:].strip(' \t\n\r')  # remove ':'
-            push_ipdatetime = push.find('span', 'push-ipdatetime').string.strip(' \t\n\r')
-            messages.append( {'push_tag': push_tag, 'push_userid': push_userid, 'push_content': push_content, 'push_ipdatetime': push_ipdatetime} )
             if push_tag == u'推':
                 p += 1
             elif push_tag == u'噓':
@@ -166,12 +165,13 @@ class PttWebCrawler(object):
         # count: 推噓文相抵後的數量; all: 推文總數
         message_count = {'all': p+b+n, 'count': p-b, 'push': p, 'boo': b, "neutral": n}
 
-        if p+b+n < 50:
+        # print 'msgs', messages
+        # print 'mscounts', message_count
+
+        if p+b+n < 30:
             print('skip')
             return
 
-        # print 'msgs', messages
-        # print 'mscounts', message_count
 
         # json data
         data = {
@@ -183,8 +183,7 @@ class PttWebCrawler(object):
             'date': date,
             'content': content,
             'ip': ip,
-            'message_count': message_count,
-            'messages': messages
+            'message_count': message_count
         }
         # print 'original:', d
         return json.dumps(data, sort_keys=True, ensure_ascii=False)
